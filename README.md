@@ -1,247 +1,184 @@
-<p align="center">
-  <a href="https://psarlin.com/pixloc"><img src="assets/logo.svg" width="60%"/></a>
-</p>
+# PixCuboid
 
+![Room Geometry from PixCuboid](assets/teaser_PixCuboid.jpeg)
 
-# Camera Localization from Pixels to Pose
+We introduce PixCuboid, an optimization-based approach for cuboid-shaped room layout estimation, which is based on multi-view alignment of dense deep features.
 
-We introduce PixLoc, a neural network that **localizes a given image via direct feature alignment with a 3D model of the environment**. PixLoc is trained end-to-end and is interpretable, accurate, and generalizes to new scenes and across domains, e.g. from outdoors to indoors. It is described in our paper:
+This repository contains the official implementation of the paper **PixCuboid: Room Layout Estimation from Multi-view Featuremetric Alignment**, to be presented at the ICCV 2025 Workshop on Large Scale Cross Device Localization.
 
-- [Back to the Feature: Learning Robust Camera Localization from Pixels to Pose](https://arxiv.org/abs/2103.09213)
-- to appear at CVPR 2021
-- Authors: [Paul-Edouard Sarlin](psarlin.com/)\*, [Ajaykumar Unagar](https://aunagar.github.io/)\*, [Måns Larsson](https://scholar.google.se/citations?user=RoOUjgQAAAAJ&hl=en), [Hugo Germain](https://www.hugogermain.com/), [Carl Toft](https://scholar.google.com/citations?user=vvgmWA0AAAAJ&hl=en), [Victor Larsson](http://people.inf.ethz.ch/vlarsson/), [Marc Pollefeys](http://people.inf.ethz.ch/pomarc/), [Vincent Lepetit](http://imagine.enpc.fr/~lepetitv/), [Lars Hammarstrand](http://www.chalmers.se/en/staff/Pages/lars-hammarstrand.aspx), [Fredrik Kahl](http://www.maths.lth.se/matematiklth/personal/fredrik/), and [Torsten Sattler](https://scholar.google.com/citations?user=jzx6_ZIAAAAJ&hl=en)
-- website: [psarlin.com/pixloc](https://psarlin.com/pixloc) with videos, slides, and visualizations
+Project page: https://ghanning.github.io/PixCuboid/
 
-<p align="center">
-  <a href="https://psarlin.com/pixloc"><img src="assets/teaser.svg" width="60%"/></a>
-</p>
+## Code base
+
+PixCuboid is built upon the excellent [PixLoc](https://github.com/cvg/pixloc) code base. The PixLoc `master` branch is available in this repository under the name `pixloc`.
 
 ## Installation
 
-PixLoc is built with Python >=3.6 and PyTorch. The package `pixloc` includes code for both training and evaluation. Installing the package locally also installs the minimal dependencies listed in `requirements.txt`:
+Install PixCuboid in editable mode as follows:
 
-``` bash
-git clone https://github.com/cvg/pixloc/
-cd pixloc/
+```bash
+git clone https://github.com/ghanning/PixCuboid.git
+cd PixCuboid/
+virtualenv venv
+source venv/bin/activate
 pip install -e .
 ```
 
-Generating visualizations and animations requires extra dependencies that can be installed with:
+Running the demo notebooks requires some extra dependencies that can be installed with:
+
 ```bash
 pip install -e .[extra]
 ```
 
-Paths to the datasets and to training and evaluation outputs are defined in [`pixloc/settings.py`](pixloc/settings.py). The default structure is as follows:
+## Datasets
+
+Download the [ScanNet++](https://kaldir.vc.in.tum.de/scannetpp/) and [2D-3D-Semantics](https://github.com/alexsax/2D-3D-Semantics) datasets from their respective web sites and unpack into a subdirectory named "datasets". The expected directory structure is shown below.
 
 ```
 .
-├── datasets     # public datasets
-└── outputs
-    ├── training # checkpoints and training logs
-    ├── hloc     # 3D models and retrieval for localization
-    └── results  # outputs of the evaluation
+└── datasets
+    ├── 2d3ds
+    │   ├── area_1
+    │   ├── area_2
+    │   ├── area_3
+    │   ├── area_4
+    │   ├── area_5a
+    │   ├── area_5b
+    │   └── area_6
+    └── scannetpp
+        ├── data
+        ├── metadata
+        └── splits
 ```
 
-## Visualizations
+**Note**: We only use ScanNet++ to train PixCuboid, but provide code to run the room layout estimation also on 2D-3D-Semantics.
 
-### Demo
+## Preprocessing
 
-Have a look at the Jupyter notebook [`demo.ipynb`](./notebooks/demo.ipynb) to localize an image and animate the predictions in 2D and 3D. This requires downloading the pre-trained weights and the data for either the *Aachen Day-Night* or *Extended CMU Seasons* datasets using:
+### Undistorted DSLR images
 
-```
-python -m pixloc.download --select checkpoints Aachen CMU --CMU_slices 2
-```
+~Use the [ScanNet++ Toolbox](https://github.com/scannetpp/scannetpp) to undistort the DSLR fisheye images by following the instructions [here](https://github.com/scannetpp/scannetpp?tab=readme-ov-file#undistortion-convert-fisheye-images-to-pinhole-with-opencv).~
 
-<p align="center">
-  <a href="./notebooks/demo.ipynb"><img src="assets/viewer.gif" width="60%"/></a>
-  <br /><em>3D viewer in the demo notebook.</em>
-</p>
+**Note**: As of April 30, 2025, undistorted DSLR images are included in the ScanNet++ dataset and this step can thus be skipped.
 
-### 3D animations
+### Depth maps
 
-You can also check out our cool 3D viewer by launching the webserver with `python3 viewer/server.py` and visiting http://localhost:8000/viewer/viewer.html
+Render depth maps for the undistorted DSLR images using the `render-undistorted` branch in [my fork](https://github.com/ghanning/scannetpp) of the ScanNet++ Toolbox as described [here](https://github.com/scannetpp/scannetpp?tab=readme-ov-file#render-depth-for-dslr-and-iphone), but set `render_undistorted` to `True`.
 
-### Prediction confidences
+### 2D-3D correspondences
 
-The notebook [`visualize_confidences.ipynb`](./notebooks/visualize_confidences.ipynb) shows how to visualize the confidences of the predictions over image sequences and turn them into videos.
-
-<p align="center">
-  <a href="./notebooks/visualize_confidences.ipynb"><img src="assets/confidence.gif" width="60%"/></a>
-</p>
-
-## Datasets
-
-The codebase can evaluate PixLoc on the following datasets: *7Scenes*, *Cambridge Landmarks*, *Aachen Day-Night*, *Extended CMU Seasons*, and *RobotCar Seasons*. Running the evaluation requires to download the following assets:
-
-- The given dataset;
-- Sparse 3D Structure-from-Motion point clouds and results of the image retrieval, both generated with our toolbox [hloc](https://github.com/cvg/Hierarchical-Localization/) and hosted [here](https://cvg-data.inf.ethz.ch/pixloc_CVPR2021/);
-- Weights of the model trained on *CMU* or *MegaDepth*, hosted [here](https://cvg-data.inf.ethz.ch/pixloc_CVPR2021/checkpoints/).
-
-We provide a convenient script to download all assets for one or multiple datasets using:
+Run our preprocessing script to find the 2D-3D point correspondences used in training:
 
 ```bash
-python -m pixloc.download --select [7Scenes|Cambridge|Aachen|CMU|RobotCar|checkpoints]
-```
-(see `--help` for additional arguments like `--CMU_slices`)
-
-## Evaluation
-
-To perform the localization on all queries of one of the supported datasets, simply launch the corresponding run script:
-
-```
-python -m pixloc.run_[7Scenes|Cambridge|Aachen|CMU|RobotCar]  # choose one
+python -m pixloc.pixlib.preprocess_scannetpp
 ```
 
-Optional flags:
+### Perspective images for 2D-3D-Semantics (optional)
 
-- `--results path_to_output_poses` defaults to `outputs/results/pixloc_[dataset_name].txt`
-- `--from_poses` to refine the poses estimated by hloc rather than starting from reference poses
-- `--inlier_ranking` to run the oracle baseline using inliers counts of hloc
-- `--scenes` to select a subset of the scenes of the *7Scenes* and *Cambridge Landmarks* datasets
-- any configuration entry can be overwritten from the command line thanks to [OmegaConf](https://omegaconf.readthedocs.io/en/2.1_branch/usage.html#from-command-line-arguments). For example, to increase the number of reference images, add `refinement.num_dbs=5`.
+Split the panorama images into perspective views as detailed [here](https://github.com/ghanning/MultiViewCuboid?tab=readme-ov-file#perspective-images-2d-3d-semantics).
 
-This displays the evaluation metrics for *7Scenes* and *Cambridge*, while the other datasets require uploading the poses to the evaluation server hosted at [visuallocalization.net](https://www.visuallocalization.net/).
+### Line segments (optional)
+
+While line segments are not required to train PixCuboid they improve its performance at inference time. To extract line segments with [DeepLSD](https://github.com/cvg/DeepLSD) first install it with
+
+```bash
+pip install -e .[deeplsd]
+```
+
+then download the pre-trained weights
+
+```bash
+mkdir weights
+wget https://cvg-data.inf.ethz.ch/DeepLSD/deeplsd_md.tar -O weights/deeplsd_md.tar
+```
+
+and run the extraction for ScanNet++ and 2D-3D-Semantics:
+
+```bash
+./scripts/line_segments_scannetpp.sh
+./scripts/line_segments_2d3ds.sh
+```
+
+Alternatively, you can download the line segments for ScanNet++ from [here](https://drive.google.com/file/d/1HUJrkj8YE7Z8_8roA9_pE1Ox_VNwspD4/view?usp=sharing) (665 MiB) and unpack them with the command
+
+```bash
+unzip line_segments_scannetpp.zip -d datasets/scannetpp
+```
+
+Similarly, the line segments for 2D-3D-Semantics are available [here](https://drive.google.com/file/d/1mP744R2uNAnHNpKCMosrd6tNCxOTW2dt/view?usp=sharing) (8 MiB). Unzip with
+
+```bash
+unzip line_segments_2d3ds.zip -d datasets/2d3ds
+```
 
 ## Training
 
-### Data preparation
-
-<details>
-<summary>[Click to expand]</summary>
-
-The 3D point clouds, camera poses, and intrinsic parameters are preprocessed together to allow for fast data loading during training. These files are generated using the scripts `pixloc/pixlib/preprocess_[cmu|megadepth].py`. Such data is also hosted [here](https://cvg-data.inf.ethz.ch/pixloc_CVPR2021/training/) and can be download via:
-
-```
-python -m pixloc.download --select CMU MegaDepth --training
-```
-
-This also downloads the training split of the *CMU* dataset. The undistorted MegaDepth data (images) can be downloaded [from the D2-Net repository](https://github.com/mihaidusmanu/d2-net#downloading-and-preprocessing-the-megadepth-dataset).
-
-</details>
-
-### Training experiment
-
-<details>
-<summary>[Click to expand]</summary>
-
-The training framework and detailed usage instructions are described at [`pixloc/pixlib/`](pixloc/pixlib/). The training experiments are defined by configuration files for which examples are given at [`pixloc/pixlib/configs/`](pixloc/pixlib/configs/). For example, the following command trains PixLoc on the *CMU* dataset:
+Training is done in two stages. First the edge detector is pre-trained by running:
 
 ```bash
-python -m pixloc.pixlib.train pixloc_cmu_reproduce \
-		--conf pixloc/pixlib/configs/train_pixloc_cmu.yaml
+python -m pixloc.pixlib.train --conf pixloc/pixlib/configs/pretrain_pixcuboid_scannetpp.yaml pixcuboid_scannetpp_pretrain
 ```
 
-- To track the loss and evaluation metrics throughout training, we use Tensorboard:
+Next the full network is trained, with weights initialized from the previous stage:
 
 ```bash
-tensorboard --logdir outputs/training/
+python -m pixloc.pixlib.train --conf pixloc/pixlib/configs/train_pixcuboid_scannetpp.yaml pixcuboid_scannetpp train.load_experiment=pixcuboid_scannetpp_pretrain
 ```
-Once the validation loss has saturated (around 20k-40k iterations), the training can be interrupted with `Ctrl+C`. All training experiments were conducted with a single RTX 2080 Ti NVIDIA GPU, but the code supports multi-GPU training for faster convergence.
 
-- To investigate the two-view predictions on the validation splits, check out the notebooks [`training_CMU.ipynb`](./notebooks/training_CMU.ipynb) and [`training_MegaDepth.ipynb`](./notebooks/training_MegaDepth.ipynb).
+*Tip*: Pass the `--wandb_project <PROJECT>` argument to the training script to log the results to [Weights & Biases](https://wandb.ai).
 
-- To evaluate the localization using a newly trained model, simply add the name of your training experiment to the evaluation command, such as:
+## Evaluation
+
+We supply a script to run PixCuboid on each image tuple (ScanNet++) or space (2D-3D-Semantics) and output the room layout predictions to a JSON file.
+
+### ScanNet++
 
 ```bash
-python -m pixloc.run_CMU.py experiment=experiment_name
+python -m pixloc.run_PixCuboid --experiment pixcuboid_scannetpp --conf pixloc/pixlib/configs/eval_pixcuboid_scannetpp.yaml --split {train,val,test} --output OUTPUT
 ```
 
-</details>
+### 2D-3D-Semantics
 
-## Running PixLoc on your own data
-
-<details>
-<summary>[Click to expand]</summary>
-
-1. Localizing requires calibrated and posed reference images as well as calibrated query images.
-2. We also need a sparse SfM point clouds and a list of image pairs obtained with image retrieval. You can easily generate them using our toolbox [hloc](https://github.com/cvg/Hierarchical-Localization/).
-3. Taking the `pixloc/run_Aachen.py` as a template, we can copy the file structure of the *Aachen* dataset and/or adjust the variable `default_paths`, which stores local subpaths from `DATA_PATH` and `LOC_PATH` (defined in [`pixloc/settings.py`](pixloc/settings.py)).
-
-</details>
-
-## Extending PixLoc
-
-<details>
-<summary>[Click to expand]</summary>
-
-- Different flavors of the Levenberg-Marquardt optimizer with different damping strategies are defined in [`pixloc/pixlib/models/[base|classic|learned]_optimizer.py`](./pixloc/pixlib/models/base_optimizer.py).
-- The cost function is defined in [`pixloc/pixlib/geometry/costs.py`](./pixloc/pixlib/geometry/costs.py) and can be easily modified.
-- The training-time architecture and loss are defined in [`pixloc/pixlib/models/two_view_refiner.py`](./pixloc/pixlib/models/two_view_refiner.py).
-- At inference time, the pose is initialized in [`pixloc/localization/refiners.py`](./pixloc/localization/refiners.py).
-
-</details>
-
-## Goodies
-
-### Viewer
-
-<details>
-<summary>[Click to expand]</summary>
-
-We provide in [`viewer/`](./viewer/) a simple web-based visualizer built with [three.js](https://threejs.org/). Quantities of interest (3D points, 2D projections, camera trajectories) are first written to a JSON file and then loaded in the front-end. The trajectory can be animated and individual frames captured to generate a video.
-
-</details>
-
-### Geometry objects
-
-<details>
-<summary>[Click to expand]</summary>
-
-We provide in [`pixloc/pixlib/geometry/wrappers.py`](./pixloc/pixlib/geometry/wrappers.py) PyTorch objects for representing SE(3) Poses and Camera models with lens distortion. With a `torch.Tensor`-like interface, these objects support batching, GPU computation, backpropagation, and operations over 3D and 2D points:
-
-```python
-from pixloc.pixlib.geometry import Pose, Camera
-R    # rotation matrix with shape (B,3,3)
-t    # translation vector with shape (B,3)
-p3D  # 3D points with shape (B,N,3)
-
-T_w2c = Pose.from_Rt(R, t)
-T_w2c = T_w2c.cuda()   # behaves like a torch.Tensor
-p3D_c = T_w2c * p3D    # transform points
-T_A2C = T_B2C @ T_A2B  # chain Pose objects
-
-cam1 = Camera.from_colmap(dict)     # from a COLMAP dict
-cam = torch.stack([cam1, cam2])     # batch Camera objects
-p2D, mask = cam.world2image(p3D_c)  # project and undistort
-J, mask = cam.J_world2image(p3D_c)  # Jacobian of the projection
+```bash
+python -m pixloc.run_PixCuboid --experiment pixcuboid_scannetpp --conf pixloc/pixlib/configs/eval_pixcuboid_2d3ds.yaml --split test --output OUTPUT
 ```
 
-</details>
+The resulting predictions can be evaluated using the code in the [MultiViewCuboid](https://github.com/ghanning/MultiViewCuboid) repository.
 
-### Implementation of GN-Net
+## Pre-trained weights
 
-<details>
-<summary>[Click to expand]</summary>
+Pre-trained weights for a model trained on ScanNet++ as outlined above can be found [here](https://drive.google.com/file/d/1_w1qNv7hHn7ozXaQx1tqOb0BtzWJbFPM/view?usp=share_link) (317 MiB). Extract the checkpoint with
 
-We provide in [`pixloc/pixlib/models/gnnet.py`](./pixloc/pixlib/models/gnnet.py) a clean implementation of the [Gauss-Newton Network](https://arxiv.org/abs/1904.11932) introduced by Von Stumberg et al., along with [a configuration file](./pixloc/pixlib/configs/train_gnnet_cmu.yaml) to train it on CMU. At inference time, we can run pose estimation with our classical LM optimizer.
+```bash
+mkdir -p outputs/training && unzip pixcuboid_scannetpp.zip -d outputs/training
+```
 
-</details>
+## Demo
 
-## Disclaimer
+Try out PixCuboid on ScanNet++ and 2D-3D-Semantic with the Jupyter notebook [demo_PixCuboid.ipynb](notebooks/demo_PixCuboid.ipynb).
 
-Since the publication of the paper, we have substantially refactored the codebase, with many usability improvements and updated dependencies. As a consequence, the results of the evaluation and training might slightly deviate from (and often improve over) the original numbers found in our CVPR 2021 paper. If you are writing a paper, for consistency with the literature, please report the original numbers. If you are building on top of this codebase, consider reporting the latest numbers for fairness.
+We show how the method can be applied to your own data (e.g. a set of images from a [COLMAP](https://colmap.github.io/) reconstruction) in the notebook [PixCuboid_COLMAP.ipynb](notebooks/PixCuboid_COLMAP.ipynb).
 
-## BibTex Citation
+## BibTex citation
 
-Please consider citing our work if you use any of the ideas presented the paper or code from this repo:
+Use the BibTeX reference below to cite our work.
 
 ```
-@inproceedings{sarlin21pixloc,
-  author    = {Paul-Edouard Sarlin and
-               Ajaykumar Unagar and
-               Måns Larsson and
-               Hugo Germain and
-               Carl Toft and
-               Victor Larsson and
-               Marc Pollefeys and
-               Vincent Lepetit and
-               Lars Hammarstrand and
-               Fredrik Kahl and
-               Torsten Sattler},
-  title     = {{Back to the Feature: Learning Robust Camera Localization from Pixels to Pose}},
-  booktitle = {CVPR},
-  year      = {2021},
+@inproceedings{hanning2025pixcuboid,
+  title={{PixCuboid: Room Layout Estimation from Multi-view Featuremetric Alignment}},
+  author={Hanning, Gustav and Åström, Kalle and Larsson, Viktor},
+  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) Workshops},
+  year={2025},
 }
 ```
 
-Logo font by [Cyril Bourreau](https://www.dafont.com/back-to-the-future.font).
+In addition, please consider citing the PixLoc paper:
+
+```
+@inproceedings{sarlin21pixloc,
+  title={{Back to the Feature: Learning Robust Camera Localization from Pixels to Pose}},
+  author={Paul-Edouard Sarlin and Ajaykumar Unagar and Måns Larsson and Hugo Germain and Carl Toft and Victor Larsson and Marc Pollefeys and Vincent Lepetit and Lars Hammarstrand and Fredrik Kahl and Torsten Sattler},
+  booktitle={CVPR},
+  year={2021},
+}
+```

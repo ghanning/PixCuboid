@@ -15,6 +15,7 @@ from omegaconf import OmegaConf
 from tqdm import tqdm
 import torch
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 
 from .datasets import get_dataset
 from .models import get_model
@@ -114,13 +115,15 @@ def training(rank, conf, output_dir, args):
         logger.info(f'Restoring from previous training of {args.experiment}')
         init_cp = get_last_checkpoint(args.experiment, allow_interrupted=False)
         logger.info(f'Restoring from checkpoint {init_cp.name}')
-        init_cp = torch.load(str(init_cp), map_location='cpu')
+        init_cp = torch.load(str(init_cp), map_location='cpu',
+                             weights_only=False)
         conf = OmegaConf.merge(OmegaConf.create(init_cp['conf']), conf)
         epoch = init_cp['epoch'] + 1
 
         # get the best loss or eval metric from the previous best checkpoint
         best_cp = get_best_checkpoint(args.experiment)
-        best_cp = torch.load(str(best_cp), map_location='cpu')
+        best_cp = torch.load(str(best_cp), map_location='cpu',
+                             weights_only=False)
         best_eval = best_cp['eval'][conf.train.best_key]
         del best_cp
     else:
@@ -133,7 +136,8 @@ def training(rank, conf, output_dir, args):
                 f'Will fine-tune from weights of {conf.train.load_experiment}')
             # the user has to make sure that the weights are compatible
             init_cp = get_last_checkpoint(conf.train.load_experiment)
-            init_cp = torch.load(str(init_cp), map_location='cpu')
+            init_cp = torch.load(str(init_cp), map_location='cpu',
+                                 weights_only=True)
         else:
             init_cp = None
 
@@ -265,8 +269,6 @@ def training(rank, conf, output_dir, args):
                 do_backward = do_backward > 0
             if do_backward:
                 loss.backward()
-                optimizer.step()
-                lr_scheduler.step()
                 if conf.train.get('clip_grad', None):
                     if it % conf.train.log_every_iter == 0:
                         grads = [p.grad.data.abs().reshape(-1)
@@ -280,6 +282,8 @@ def training(rank, conf, output_dir, args):
                         del grads, ratio
                     torch.nn.utils.clip_grad_value_(
                             all_params, conf.train.clip_grad)
+                optimizer.step()
+                lr_scheduler.step()
             else:
                 if rank == 0:
                     logger.warning(f'Skip iteration {it} due to detach.')
@@ -299,6 +303,8 @@ def training(rank, conf, output_dir, args):
                         writer.add_scalar('training/'+k, v, tot_it)
                     writer.add_scalar(
                         'training/lr', optimizer.param_groups[0]['lr'], tot_it)
+                    wandb.log({'training/'+k: v for k, v in losses.items()}, commit=False)
+                    wandb.log({'training/lr': optimizer.param_groups[0]['lr']}, commit=False)
 
             del pred, data, loss, losses
 
@@ -313,7 +319,10 @@ def training(rank, conf, output_dir, args):
                     logger.info(f'[Validation] {{{", ".join(str_results)}}}')
                     for k, v in results.items():
                         writer.add_scalar('val/'+k, v, tot_it)
+                    wandb.log({'val/'+k: v for k, v in results.items()}, commit=False)
                 torch.cuda.empty_cache()  # should be cleared at the first iter
+
+            wandb.log({}, step=tot_it)
 
             if stop:
                 break
@@ -364,6 +373,7 @@ if __name__ == '__main__':
     parser.add_argument('--overfit', action='store_true')
     parser.add_argument('--restore', action='store_true')
     parser.add_argument('--distributed', action='store_true')
+    parser.add_argument('--wandb_project', type=str)
     parser.add_argument('dotlist', nargs='*')
     args = parser.parse_args()
 
@@ -378,6 +388,10 @@ if __name__ == '__main__':
         if conf.train.seed is None:
             conf.train.seed = torch.initial_seed() & (2**32 - 1)
         OmegaConf.save(conf, str(output_dir / 'config.yaml'))
+
+    mode = 'online' if args.wandb_project else 'disabled'
+    wandb.init(project=args.wandb_project, config=OmegaConf.to_container(conf),
+               mode=mode, name=args.experiment)
 
     if args.distributed:
         args.n_gpus = torch.cuda.device_count()

@@ -1,5 +1,7 @@
-datasets/
-outputs/
+/datasets/
+/outputs/
+/weights/
+/wandb/
 *.mp4
 lsf*
 .DS_Store

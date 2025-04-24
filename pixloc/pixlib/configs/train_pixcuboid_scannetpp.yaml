@@ -1,0 +1,54 @@
+data:
+  name: scannetpp
+  max_num_points3D: 256
+  force_num_points3D: true
+  num_views: 5
+  resize_by: min
+  resize: 512
+  crop: 512
+  train_num_per_scene: 50
+  val_num_per_scene: 10
+  batch_size: 4
+  num_workers: 8
+  seed: 1
+  init_cuboid: ground_truth
+  init_cuboid_max_rot: 0.2618 # 15 deg
+  init_cuboid_max_trans: 0.5
+  init_cuboid_max_grow: [-1.0, 1.5]
+  init_cuboid_cam_margin: 0.5
+model:
+  name: cuboid_refiner
+  success_thresh: 3
+  duplicate_optimizer_per_scale: true
+  point_sampling: guided
+  num_points2D: 256
+  extractor:
+    name: dual_decoder_unet
+    encoder: resnet101
+    weights: IMAGENET1K_V2
+    decoder: [64, 64, 64, 32]
+    output_scales: [0, 2, 4]
+    output_dim: [32, 128, 128]
+    compute_uncertainty: true
+    compute_edge_map: true
+    compute_edge_uncertainty: true
+    checkpointed: true
+  optimizer:
+    name: cuboid_optimizer
+    num_iters: 3
+    loss_fn: scaled_barron(0, 0.1)
+    edge_cost_scale: 0.1
+    num_edge_points: 40
+    clamp_dd: 0.25
+train:
+  seed: 0
+  epochs: 10
+  log_every_iter: 50
+  eval_every_iter: 500
+  dataset_callback_fn: sample_new_items
+  lr: 5.0e-06
+  lr_scaling: [[100, ['dampingnet.const']]]
+  median_metrics:
+  - loss/warp_error
+  - loss/warp_error/init
+  clip_grad: 1.0

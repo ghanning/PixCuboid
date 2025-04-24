@@ -1,0 +1,42 @@
+data:
+  name: scannetpp
+  num_views: 1
+  resize_by: min
+  resize: 512
+  train_num_per_scene: 150
+  val_num_per_scene: 10
+  init_cuboid: cameras
+  max_num_points3D: 0
+  render_edge_image: true
+  edge_image_line_width: 3
+  batch_size: 10
+  num_workers: 8
+  seed: 1
+model:
+  name: cuboid_edge_detector
+  loss: MSELoss
+  weight_edge: 5.0
+  duplicate_optimizer_per_scale: true
+  extractor:
+    name: dual_decoder_unet
+    encoder: resnet101
+    weights: IMAGENET1K_V2
+    decoder: [64, 64, 64, 32]
+    output_scales: [0, 2, 4]
+    output_dim: [32, 128, 128]
+    compute_uncertainty: true
+    compute_edge_map: true
+    compute_edge_uncertainty: true
+    checkpointed: true
+  optimizer:
+    name: cuboid_optimizer
+train:
+  seed: 0
+  epochs: 10
+  log_every_iter: 50
+  eval_every_iter: 500
+  dataset_callback_fn: sample_new_items
+  lr: 5.0e-06
+  clip_grad: 1.0
+  median_metrics:
+  - loss/mse

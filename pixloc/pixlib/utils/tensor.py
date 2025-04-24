@@ -1,4 +1,4 @@
-from torch._six import string_classes
+string_classes = str
 import collections.abc as collections
 
 

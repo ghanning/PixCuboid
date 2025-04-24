@@ -63,7 +63,7 @@ class TensorWrapper:
         return self.__class__(self._data[index])
 
     def __setitem__(self, index, item):
-        self._data[index] = item.data
+        self._data[index] = item._data
 
     def to(self, *args, **kwargs):
         return self.__class__(self._data.to(*args, **kwargs))
@@ -86,11 +86,17 @@ class TensorWrapper:
     def detach(self):
         return self.__class__(self._data.detach())
 
+    def unsqueeze(self, dim: int) -> torch.Tensor:
+        if dim < 0:
+            dim -= 1
+        return self.__class__(self._data.unsqueeze(dim))
+
     @classmethod
     def stack(cls, objects: List, dim=0, *, out=None):
         data = torch.stack([obj._data for obj in objects], dim=dim, out=out)
         return cls(data)
 
+    @classmethod
     def __torch_function__(self, func, types, args=(), kwargs=None):
         if kwargs is None:
             kwargs = {}
@@ -344,6 +350,11 @@ class Camera(TensorWrapper):
 
     def J_denormalize(self):
         return torch.diag_embed(self.f).unsqueeze(-3)  # 1 x 2 x 2
+
+    @autocast
+    def normalize(self, p2d: torch.Tensor) -> torch.Tensor:
+        '''Convert pixel coordinates into normalized 2D coordinates.'''
+        return (p2d - self.c.unsqueeze(-2)) / self.f.unsqueeze(-2)
 
     @autocast
     def world2image(self, p3d: torch.Tensor) -> Tuple[torch.Tensor]:

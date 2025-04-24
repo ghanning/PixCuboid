@@ -8,3 +8,6 @@ scipy
 h5py
 omegaconf
 tensorboard
+plyfile
+tqdm
+wandb

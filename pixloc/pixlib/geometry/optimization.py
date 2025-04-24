@@ -30,21 +30,12 @@ def optimizer_step(g, H, lambda_=0, mute=False, mask=None, eps=1e-6):
         # set g to 0 to delta is 0 for masked elements
         g = g.masked_fill(~mask[..., None], 0.)
 
-    H_, g_ = H.cpu(), g.cpu()
-    try:
-        U = cholesky(H_)
-    except RuntimeError as e:
-        if 'singular U' in str(e):
-            if not mute:
-                logger.debug(
-                    'Cholesky decomposition failed, fallback to LU.')
-            delta = -torch.solve(g_[..., None], H_)[0][..., 0]
-        else:
-            raise
-    else:
-        delta = -torch.cholesky_solve(g_[..., None], U)[..., 0]
+    U, info = torch.linalg.cholesky_ex(H)
+    if not torch.all(info == 0):
+        raise RuntimeError("Cholesky decomposition failed")
+    delta = -torch.cholesky_solve(g[..., None], U)[..., 0]
 
-    return delta.to(H.device)
+    return delta
 
 
 def skew_symmetric(v):

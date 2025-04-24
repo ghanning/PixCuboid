@@ -55,6 +55,7 @@ class UNet(BaseModel):
         'output_scales': [0, 2, 4],  # what scales to adapt and output
         'output_dim': 128,  # # of channels in output feature maps
         'encoder': 'vgg16',  # string (torchvision net) or list of channels
+        'weights': 'DEFAULT',  # string (torchvision weights)
         'num_downsample': 4,  # how many downsample block (if VGG-style net)
         'decoder': [64, 64, 64, 64],  # list of channels of decoder
         'decoder_norm': 'nn.BatchNorm2d',  # normalization ind decoder blocks
@@ -68,7 +69,7 @@ class UNet(BaseModel):
     def build_encoder(self, conf):
         assert isinstance(conf.encoder, str)
         Encoder = getattr(torchvision.models, conf.encoder)
-        encoder = Encoder(pretrained=True)
+        encoder = Encoder(weights=conf.weights)
         Block = checkpointed(torch.nn.Sequential, do=conf.checkpointed)
 
         if conf.encoder.startswith('vgg'):

@@ -1,1 +1,3 @@
 *.ipynb linguist-documentation
+pixloc/pixlib/datasets/scannetpp/* -diff
+pixloc/pixlib/datasets/2d3ds/* -diff

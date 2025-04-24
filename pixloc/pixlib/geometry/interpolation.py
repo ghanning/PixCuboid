@@ -137,6 +137,25 @@ class Interpolator:
 
     def __call__(self, tensor: torch.Tensor, pts: torch.Tensor,
                  return_gradients: bool = False):
+        if tensor.dim() == 5:
+            shape = tensor.shape[:2]
+            values, mask, gradients = self(
+                tensor.flatten(0, 1), pts.flatten(0, 1), return_gradients)
+            values, mask, gradients = (
+                x.reshape(shape + x.shape[1:])
+                for x in (values, mask, gradients))
+            return values, mask, gradients
+
+        if self.mode == 'cubic' and tensor.dim() == 4:
+            values, mask, gradients = [], [], []
+            for i in range(tensor.shape[0]):
+                v, m, g = self(tensor[i], pts[i], return_gradients)
+                values.append(v)
+                mask.append(m)
+                gradients.append(g)
+            values, mask, gradients = (torch.stack(x) for x in (values, mask, gradients))
+            return values, mask, gradients
+
         return interpolate_tensor(
             tensor, pts, self.mode, self.pad, return_gradients)
 
