@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PixCuboid: Room Layout Estimation from Multi-view Featuremetric Alignment</title>
+    <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+    <link rel="stylesheet" href="static/css/academicons.min.css">
+    <link rel="stylesheet" href="static/css/bulma.min.css">
+    <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+    <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+    <link rel="stylesheet" href="static/css/index.css">
+    <script src="static/js/bulma-carousel.min.js"></script>
+    <script defer src="static/js/fontawesome.all.min.js"></script>
+  </head>
+  <body>
+    <section class="hero">
+      <div class="container is-max-desktop">
+        <div class="hero-body has-text-centered pb-4">
+          <h1 class="title is-2">PixCuboid: Room Layout Estimation from Multi-view Featuremetric Alignment</h1>
+          <div class="is-size-5">
+            <a href="http://www.linkedin.com/in/gustav-hanning" target="_blank">Gustav Hanning</a>,
+            <a href="#" target="_blank">Kalle Åström</a>,
+            <a href="https://vlarsson.github.io/" target="_blank">Viktor Larsson</a>
+          </div>
+          <div class="is-size-5">
+            Lund University
+            <br>
+            International Conference on Computer Vision 2025
+          </div>
+
+          <div class="buttons is-centered pt-4">
+            <a href="#" target="_blank" class="button is-medium is-dark is-rounded is-responsive"> <!-- TODO: Update link to paper -->
+              <span class="icon">
+                <i class="fas fa-file-pdf"></i>
+              </span>
+              <span>Paper</span>
+            </a>
+            <a href="https://github.com/ghanning/PixCuboid" target="_blank" class="button is-medium is-dark is-rounded is-responsive">
+              <span class="icon">
+                <i class="fab fa-github"></i>
+              </span>
+              <span>Code</span>
+            </a>
+            <a href="https://github.com/ghanning/MultiViewCuboid" target="_blank" class="button is-medium is-dark is-rounded is-responsive">
+              <span class="icon">
+                <i class="fas fa-database"></i>
+              </span>
+              <span>Datasets</span>
+            </a>
+            <a href="#" target="_blank" class="button is-medium is-dark is-rounded is-responsive"> <!-- TODO: Update link to arXiv -->
+              <span class="icon">
+                <i class="ai ai-arxiv"></i>
+              </span>
+              <span>arXiv</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero">
+      <div class="container is-max-desktop">
+        <div class="hero-body">
+          <video autoplay playsinline controls height="100%">
+            <source src="static/videos/acd95847c5.mp4" type="video/mp4">
+          </video>
+          <h5 class="subtitle is-5 has-text-centered">
+            Our optimization-based room layout estimation method <em>PixCuboid</em> can accurately <span class="pred">predict</span> the layout from a collection of posed images. The ground truth layout is shown in <span class="gt">yellow</span>. The point cloud is displayed for visualization purposes and is not used as an input to our method.
+          </h5>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero is-light" id="abstract">
+      <div class="container is-max-desktop">
+        <div class="hero-body has-text-centered">
+          <p class="title">Abstract</p>
+          <div class="content has-text-justified">
+            Coarse room layout estimation provides important geometric cues for many downstream tasks. Current state-of-the-art methods are predominantly based on single views and often assume panoramic images. We introduce PixCuboid, an optimization-based approach for cuboid-shaped room layout estimation, which is based on multi-view alignment of dense deep features. By training with the optimization end-to-end, we learn feature maps that yield large convergence basins and smooth loss landscapes in the alignment. This allows us to initialize the room layout using simple heuristics.
+            <br><br>
+            For the evaluation we propose two new benchmarks based on ScanNet++ and 2D-3D-Semantics, with manually verified ground truth 3D cuboids. In thorough experiments we validate our approach and significantly outperform the competition. Finally, while our network is trained with single cuboids, the flexibility of the optimization-based approach allow us to easily extend to multi-room estimation, e.g. larger apartments or offices.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="hero">
+      <div class="container is-max-desktop">
+        <div class="hero-body">
+          <h2 class="title">Results</h2>
+          <div id="image-carousel" class="carousel is-clipped">
+            <div class="item">
+              <video autoplay playsinline loop height="100%">
+                <source src="static/videos/area_4_office_15.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="item">
+              <video autoplay playsinline loop height="100%">
+                <source src="static/videos/area_6_conferenceRoom_1.mp4" type="video/mp4">
+              </video>
+            </div>
+            <div class="item">
+              <video autoplay playsinline loop height="100%">
+                <source src="static/videos/area_4_office_1.mp4" type="video/mp4">
+              </video>
+            </div>
+          </div>
+          <h5 class="subtitle is-5 has-text-centered">
+            We compare our predicted layouts with those of Total3DUnderstanding, Implicit3DUnderstanding, Deep3DLayout, LED²-Net and PSMNet. The results are shown above for three spaces in 2D-3D-Semantics. Predictions are visualized in <span class="pred">blue</span> and the ground truth cuboids in <span class="gt">yellow</span>.
+          <h5>
+        </div>
+      </div>
+    </section>
+
+    <!-- TODO: Add poster
+    <section class="hero is-light">
+      <div class="container">
+        <div class="hero-body">
+          <p class="title">Poster</p>
+          <div class="content poster">
+            <embed src="static/pdf/dummy.pdf" type="application/pdf">
+          </div>
+        </div>
+      </div>
+    </section>
+    -->
+
+    <section class="section" id="bibtex">
+      <div class="container is-max-desktop">
+        <h2 class="title">BibTeX</h2>
+        <pre class="is-relative">
+<code id="bibtex-code">
+@inproceedings{hanning2025pixcuboid,
+  title={{PixCuboid: Room Layout Estimation from Multi-view Featuremetric Alignment}},
+  author={Hanning, Gustav and Åström, Kalle and Larsson, Viktor},
+  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) Workshops},
+  year={2025},
+}
+</code><!--
+       --><button class="button is-absolute clipboard-button is-pulled-right m-2" onclick="copyToClipboard('#bibtex-code')">
+            <span class="icon is-small">
+              <i class="fas fa-copy"></i>
+            </span>
+          </button><!--
+     --></pre>
+      </div>
+    </section>
+  </body>
+
+  <script type="text/javascript">
+    function copyToClipboard(elemId) {
+        let elem = document.querySelector(elemId);
+        navigator.clipboard.writeText(elem.innerText);
+    }
+
+    bulmaCarousel.attach('#image-carousel', {
+      pagination: false,
+      loop: true,
+      infinite: true,
+    });
+  </script>
+</html>
