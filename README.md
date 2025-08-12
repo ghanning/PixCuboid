@@ -177,7 +177,7 @@ In addition, please consider citing the PixLoc paper:
 ```
 @inproceedings{sarlin21pixloc,
   title={{Back to the Feature: Learning Robust Camera Localization from Pixels to Pose}},
-  author={Paul-Edouard Sarlin and Ajaykumar Unagar and Måns Larsson and Hugo Germain and Carl Toft and Victor Larsson and Marc Pollefeys and Vincent Lepetit and Lars Hammarstrand and Fredrik Kahl and Torsten Sattler},
+  author={Paul-Edouard Sarlin and Ajaykumar Unagar and Måns Larsson and Hugo Germain and Carl Toft and Viktor Larsson and Marc Pollefeys and Vincent Lepetit and Lars Hammarstrand and Fredrik Kahl and Torsten Sattler},
   booktitle={CVPR},
   year={2021},
 }
