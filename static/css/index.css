@@ -24,3 +24,26 @@
 .gt {
   color: rgb(246,205,97);
 }
+
+.ribbon-container {
+  position: relative;
+}
+
+.ribbon {
+  display: none;
+  position: absolute;
+  top: 90px;
+  right: -20px;
+  background-color: #ffdd57;
+  color: #363636;
+  padding: 10px 20px;
+  transform: rotate(45deg);
+  transform-origin: 50% 50%;
+  box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
+}
+
+@media screen and (min-width: 768px) {
+  .ribbon {
+    display: block;
+  }
+}
