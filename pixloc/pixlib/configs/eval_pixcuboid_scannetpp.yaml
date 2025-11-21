@@ -1,7 +1,6 @@
 data:
   name: scannetpp
   max_num_points3D: 256
-  force_num_points3D: true
   num_views: 5
   resize_by: min
   resize: 512
