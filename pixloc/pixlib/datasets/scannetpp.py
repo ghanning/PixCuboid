@@ -21,11 +21,28 @@ from ...visualization.cuboid import draw_edges
 logger = logging.getLogger(__name__)
 
 
+def nerfstudio_to_colmap(c2w: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    '''Convert a camera-to-world matrix from Nerfstudio format to
+    COLMAP world-to-camera (R, t).
+
+    See https://github.com/nerfstudio-project/nerfstudio/blob/da57d3f5ba5362391b961cb4ce8b5eda4e97268f/nerfstudio/data/dataparsers/colmap_dataparser.py#L155-L160
+    '''
+    c2w = c2w.copy()
+    c2w[2] *= -1
+    c2w = c2w[[1, 0, 2, 3]]
+    c2w[0:3, 1:3] *= -1
+    w2c = np.linalg.inv(c2w)
+    R, t = w2c[:3, :3], w2c[:3, 3]
+    return R, t
+
+
 class ScanNet(BaseDataset):
     default_conf = {
         'dataset_dir': 'scannetpp/',
         'image_subpath': 'data/{}/dslr/undistorted_images/',
+        'transform_subpath': 'data/{}/dslr/nerfstudio/transforms_undistorted.json',
         'info_dir': 'scannetpp_pixcuboid_training/',
+        'read_info_files': False,
 
         'train_num_per_scene': None,
         'val_num_per_scene': None,
@@ -82,17 +99,35 @@ class _Dataset(torch.utils.data.Dataset):
         with open(mvc_dir / f'images_{split}.json') as f:
             self.image_tuples = json.load(f)
 
-        self.read_info_files()
+        self.read_transform_files()
+
+        if self.conf.read_info_files:
+            self.read_info_files()
 
         if self.conf[self.split + '_num_per_scene']:
             self.sample_new_items(conf.seed)
         else:
-            self.add_all_items()
+            self.items = self.image_tuples
+
+    def read_transform_files(self):
+        self.transforms = {}
+        self.frames = {}
+        for scene in self.scenes:
+            path = self.root / self.conf.transform_subpath.format(scene)
+            with open(path) as f:
+                transforms = json.load(f)
+            self.transforms[scene] = transforms
+
+            self.frames[scene] = {}
+            for f in transforms['frames'] + transforms['test_frames']:
+                self.frames[scene][f['file_path']] = f
 
     def read_info_files(self):
         logger.info(f'Reading info files')
         self.images, self.points3D, self.p3D_idx = {}, {}, {}
-        self.poses, self.intrinsics, self.image_size = {}, {}, {}
+        # The below are now instead read from the transform files,
+        # so that preprocessing is not required for inference.
+        # self.poses, self.intrinsics, self.image_size = {}, {}, {}
         self.name2idx = {}
         for scene in tqdm.tqdm(self.scenes):
             path = Path(DATA_PATH, self.conf.info_dir, scene + '.pkl')
@@ -101,9 +136,9 @@ class _Dataset(torch.utils.data.Dataset):
             self.images[scene] = info['image_names']
             self.points3D[scene] = info['points3D']
             self.p3D_idx[scene] = info['p3D_idx']
-            self.poses[scene] = info['poses']
-            self.intrinsics[scene] = info['intrinsics']
-            self.image_size[scene] = info['image_size']
+            # self.poses[scene] = info['poses']
+            # self.intrinsics[scene] = info['intrinsics']
+            # self.image_size[scene] = info['image_size']
             self.name2idx[scene] = {name: idx for idx, name in enumerate(self.images[scene])}
 
     def sample_new_items(self, seed):
@@ -114,40 +149,40 @@ class _Dataset(torch.utils.data.Dataset):
             scene = image_tuple['scene']
             if scene not in image_tuples_per_scene:
                 image_tuples_per_scene[scene] = []
-            image_tuples_per_scene[scene].append(image_tuple['images'])
+            image_tuples_per_scene[scene].append(image_tuple)
 
         self.items = []
         num_per_scene = self.conf[self.split + '_num_per_scene']
         for scene in tqdm.tqdm(self.scenes):
-            image_tuples = image_tuples_per_scene[scene]
-            for tuple_idx in np.random.RandomState(seed).choice(len(image_tuples), num_per_scene, replace=False):
-                img_idx = [self.name2idx[scene][name] for name in image_tuples_per_scene[scene][tuple_idx]]
-                self.items.append((scene, img_idx[: self.conf.num_views]))
+            image_tuples = np.random.RandomState(seed).choice(
+                image_tuples_per_scene[scene], num_per_scene, replace=False)
+            self.items.extend(image_tuples)
 
         np.random.RandomState(seed).shuffle(self.items)
 
-    def add_all_items(self):
-        self.items = []
-        for image_tuple in self.image_tuples:
-            scene = image_tuple['scene']
-            img_idx = [self.name2idx[scene][name] for name in image_tuple['images']]
-            self.items.append((scene, img_idx[: self.conf.num_views]))
-
-    def _read_view(self, scene, idx, cuboid_gt, seed):
+    def _read_view(self, scene, image_name, cuboid_gt, seed):
         image_dir = self.root / self.conf.image_subpath.format(scene)
-        image_name = self.images[scene][idx]
         image_path = image_dir / image_name
 
-        K = self.intrinsics[scene]
-        width, height = self.image_size[scene]
+        transforms = self.transforms[scene]
+        width, height = transforms['w'], transforms['h']
+        params = [transforms['fl_x'], transforms['fl_y'], transforms['cx'], transforms['cy']]
         camera = Camera.from_colmap(
-            dict(model='PINHOLE', width=width, height=height, params=K[[0, 1, 0, 1], [0, 1, 2, 2]])
+            dict(model='PINHOLE', width=width, height=height, params=params)
         )
-        T = Pose.from_Rt(*self.poses[scene][idx])
-        p3D = self.points3D[scene]
-        p3D_idx = self.p3D_idx[scene][idx]
+
+        frame = self.frames[scene][image_name]
+        R, t = nerfstudio_to_colmap(np.array(frame['transform_matrix']))
+        T = Pose.from_Rt(R, t)
+
+        if self.conf.read_info_files:
+            idx = self.name2idx[scene][image_name]
+            p3D = self.points3D[scene]
+            p3D_idx = self.p3D_idx[scene][idx]
+        else:
+            p3D, p3D_idx = np.empty((0, 3)), np.empty((0,), dtype=int)
+
         data = read_view(self.conf, image_path, camera, T, p3D, p3D_idx, random=(self.split == 'train'))
-        data['index'] = idx
         assert tuple(data['camera'].size.numpy()) == data['image'].shape[1:][::-1]
 
         obs = p3D_idx
@@ -181,13 +216,17 @@ class _Dataset(torch.utils.data.Dataset):
         return data
 
     def __getitem__(self, idx):
-        scene, image_idx = self.items[idx]
+        image_tuple = self.items[idx]
+        scene = image_tuple['scene']
         seed = self.conf.seed + idx
 
         R, t, s = (np.array(self.cuboids[scene][key]) for key in ('R', 't', 's'))
         cuboid_gt = Cuboid.from_Rts(R, t, s)
 
-        data = collate([self._read_view(scene, i, cuboid_gt, seed) for i in image_idx])
+        data = []
+        for name in image_tuple['images'][:self.conf.num_views]:
+            data.append(self._read_view(scene, name, cuboid_gt, seed))
+        data = collate(data)
 
         if self.conf.init_cuboid == 'ground_truth':
             assert self.split != 'test'

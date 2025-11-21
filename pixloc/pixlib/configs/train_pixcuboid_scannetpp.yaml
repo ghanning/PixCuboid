@@ -16,6 +16,7 @@ data:
   init_cuboid_max_trans: 0.5
   init_cuboid_max_grow: [-1.0, 1.5]
   init_cuboid_cam_margin: 0.5
+  read_info_files: true
 model:
   name: cuboid_refiner
   success_thresh: 3
