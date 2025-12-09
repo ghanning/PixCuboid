@@ -45,10 +45,10 @@ class _Dataset(torch.utils.data.Dataset):
 
         mvc_dir = Path(__file__).parent / '2d3ds'
 
-        with open(mvc_dir / 'cuboids_all.json') as f:
+        with open(mvc_dir / 'layouts_test.json') as f:
             self.cuboids = json.load(f)
 
-        with open(mvc_dir / 'images_all.json') as f:
+        with open(mvc_dir / 'images_test.json') as f:
             self.image_tuples = json.load(f)
 
     def _read_view(self, area, image_name, seed):

@@ -93,7 +93,7 @@ class _Dataset(torch.utils.data.Dataset):
         with open(mvc_dir / f'scenes_{split}.txt') as f:
             self.scenes = [line.strip() for line in f]
 
-        with open(mvc_dir / f'cuboids_{split}.json') as f:
+        with open(mvc_dir / f'layouts_{split}.json') as f:
             self.cuboids = json.load(f)
 
         with open(mvc_dir / f'images_{split}.json') as f:
