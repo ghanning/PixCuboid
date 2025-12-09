@@ -75,7 +75,7 @@ python -m pixloc.pixlib.preprocess_scannetpp
 
 ### Perspective images for 2D-3D-Semantics (optional)
 
-Split the panorama images into perspective views as detailed [here](https://github.com/ghanning/MultiViewCuboid?tab=readme-ov-file#perspective-images-2d-3d-semantics).
+Split the panorama images into perspective views as detailed [here](https://github.com/ghanning/MultiViewRoomLayout?tab=readme-ov-file#perspective-images-2d-3d-semantics).
 
 ### Line segments (optional)
 
@@ -143,7 +143,7 @@ python -m pixloc.run_PixCuboid --experiment pixcuboid_scannetpp --conf pixloc/pi
 python -m pixloc.run_PixCuboid --experiment pixcuboid_scannetpp --conf pixloc/pixlib/configs/eval_pixcuboid_2d3ds.yaml --split test --output OUTPUT
 ```
 
-The resulting predictions can be evaluated using the code in the [MultiViewCuboid](https://github.com/ghanning/MultiViewCuboid) repository.
+The resulting predictions can be evaluated using the code in the [MultiViewRoomLayout](https://github.com/ghanning/MultiViewRoomLayout) repository.
 
 ## Pre-trained weights
 
@@ -159,7 +159,7 @@ Try out PixCuboid on ScanNet++ and 2D-3D-Semantic with the Jupyter notebook [dem
 
 We show how the method can be applied to your own data (e.g. a set of images from a [COLMAP](https://colmap.github.io/) reconstruction) in the notebook [PixCuboid_COLMAP.ipynb](notebooks/PixCuboid_COLMAP.ipynb).
 
-## BibTex citation
+## BibTeX citation
 
 Use the BibTeX reference below to cite our work.
 
