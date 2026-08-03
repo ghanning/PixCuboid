@@ -8,6 +8,14 @@ This repository contains the official implementation of the paper **PixCuboid: R
 
 Project page: https://ghanning.github.io/PixCuboid/
 
+## News
+
+- 2026-08-03: Check out our follow-up method [PolyLayout](https://github.com/ghanning/PolyLayout), which extends PixCuboid to multi-room Manhattan layouts.
+
+- 2025-10-20: PixCuboid was awarded the best student paper award at the CroCoDL workshop.
+
+- 2025-08-05: Initial code release.
+
 ## Code base
 
 PixCuboid is built upon the excellent [PixLoc](https://github.com/cvg/pixloc) code base. The PixLoc `master` branch is available in this repository under the name `pixloc`.
